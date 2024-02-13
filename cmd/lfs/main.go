@@ -7,8 +7,5 @@ func main() {
 	if err != nil {
 		internal.HandleError("Could not start server", err)
 	}
-	err = server.AcceptConnections(internal.Engine)
-	if err != nil {
-		internal.HandleError("Could not accept connections", err)
-	}
+	server.AcceptConnections(internal.Engine)
 }
