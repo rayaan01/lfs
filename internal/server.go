@@ -10,8 +10,8 @@ type server struct {
 	listener net.Listener
 }
 
-func CreateServer(addr string, port string, networkType string) (*server, error) {
-	address := fmt.Sprintf("%s:%s", addr, port)
+func CreateServer(host string, port uint16, networkType string) (*server, error) {
+	address := fmt.Sprintf("%s:%d", host, port)
 	listener, err := net.Listen(networkType, address)
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func CreateServer(addr string, port string, networkType string) (*server, error)
 	return &serverInstance, nil
 }
 
-func (s *server) AcceptConnections(handler func(connection net.Conn)) error {
+func (s *server) AcceptConnections(handler func(connection net.Conn) error) error {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
