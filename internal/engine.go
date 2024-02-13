@@ -10,7 +10,6 @@ import (
 var index = map[string]int64{}
 
 func Engine(conn *net.Conn, server *server) error {
-	var offset int64 = 0
 	for {
 		buffer := make([]byte, 128)
 		n, err := (*conn).Read(buffer)
@@ -33,22 +32,21 @@ func Engine(conn *net.Conn, server *server) error {
 		case "set":
 			key := args[1]
 			val := args[2]
-			handleSet(key, val, file, &offset)
+			handleSet(key, val, file)
 		}
 	}
 }
 
-func handleSet(key string, val string, file *os.File, offset *int64) {
+func handleSet(key string, val string, file *os.File) {
 	defer file.Close()
 	record := fmt.Sprintf("%s,%s\n", key, val)
 	serializedRecord := []byte(record)
-	_, err := file.Seek(*offset, 0)
+	offset, err := file.Seek(0, 2)
 	if err != nil {
 		HandleError("Could not seek to file", err)
 	}
-	bytes, err := file.Write(serializedRecord)
-	index[key] = *offset
-	*offset = *offset + int64(bytes)
+	_, err = file.Write(serializedRecord)
+	index[key] = offset
 	if err != nil {
 		HandleError("Could not write to DB", err)
 	}
