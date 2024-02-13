@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// var index = map[string]string{}
+var index = map[string]int64{}
 
 func Engine(conn *net.Conn, server *server) error {
 	var offset int64 = 0
@@ -46,8 +46,9 @@ func handleSet(key string, val string, file *os.File, offset *int64) {
 	if err != nil {
 		HandleError("Could not seek to file", err)
 	}
-	bytesWritten, err := file.Write(serializedRecord)
-	*offset = *offset + int64(bytesWritten)
+	bytes, err := file.Write(serializedRecord)
+	index[key] = *offset
+	*offset = *offset + int64(bytes)
 	if err != nil {
 		HandleError("Could not write to DB", err)
 	}
