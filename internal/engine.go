@@ -17,7 +17,9 @@ func Engine(conn *net.Conn, server *server) error {
 		n, err := (*conn).Read(buffer)
 		if err != nil {
 			(*conn).Close()
-			fmt.Println("Could not read from connection\n", err)
+			if err.Error() != "EOF" {
+				fmt.Println("Could not read from connection\n", err)
+			}
 			return nil
 		}
 		client := (*conn).RemoteAddr().String()
