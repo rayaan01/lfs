@@ -28,7 +28,7 @@ func (s *server) AcceptConnections(handler func(conn *net.Conn, server *server) 
 		conn, err := s.listener.Accept()
 		if err != nil {
 			conn.Close()
-			HandleError("Could not accept connection", err)
+			fmt.Println("Could not accept connection", err)
 			continue
 		}
 		s.connections[conn.RemoteAddr().String()] = 0
