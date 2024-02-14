@@ -54,7 +54,6 @@ func handleGet(key string, file *os.File) string {
 	}
 	record := string(buffer[:len(buffer)-1])
 	pair := strings.Split(record, ",")
-	fmt.Println(len(pair[1]))
 	return pair[1]
 }
 
