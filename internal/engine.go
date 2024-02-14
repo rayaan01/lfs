@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -32,12 +33,32 @@ func Engine(conn *net.Conn, server *server) error {
 		case "set":
 			key := args[1]
 			val := args[2]
-			handleSet(key, val, file)
+			response := handleSet(key, val, file)
+			(*conn).Write([]byte(response + "\n"))
+		case "get":
+			key := args[1]
+			response := handleGet(key, file)
+			(*conn).Write([]byte(response + "\n"))
 		}
 	}
 }
 
-func handleSet(key string, val string, file *os.File) {
+func handleGet(key string, file *os.File) string {
+	defer file.Close()
+	offset := index[key]
+	file.Seek(offset, 0)
+	reader := bufio.NewReader(file)
+	buffer, err := reader.ReadBytes('\n')
+	if err != nil {
+		HandleError("Could not read from DB", err)
+	}
+	record := string(buffer[:len(buffer)-1])
+	pair := strings.Split(record, ",")
+	fmt.Println(len(pair[1]))
+	return pair[1]
+}
+
+func handleSet(key string, val string, file *os.File) string {
 	defer file.Close()
 	record := fmt.Sprintf("%s,%s\n", key, val)
 	serializedRecord := []byte(record)
@@ -50,4 +71,5 @@ func handleSet(key string, val string, file *os.File) {
 	if err != nil {
 		HandleError("Could not write to DB", err)
 	}
+	return "OK"
 }
