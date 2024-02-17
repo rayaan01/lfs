@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -13,21 +14,40 @@ var index = map[string]int64{}
 
 func Engine(conn net.Conn, server *server) error {
 	for {
-		buffer := make([]byte, 128)
-		n, err := conn.Read(buffer)
-		if err != nil {
-			conn.Close()
-			if err.Error() != "EOF" {
-				fmt.Println("Could not read from connection\n", err)
+		clientAddress := conn.RemoteAddr().String()
+		buffer := make([]byte, 0, 4096)
+		bytesRead := 0
+		nextInput := false
+
+		for {
+			chunk := make([]byte, 128)
+			n, err := conn.Read(chunk)
+			if err != nil {
+				if err == io.EOF {
+					conn.Close()
+					return nil
+				}
+				fmt.Printf("Could not read from connection %s : %s \n", clientAddress, err)
+				conn.Write([]byte("Parse Error!\n"))
+				nextInput = true
+				break
 			}
-			return nil
+			buffer = append(buffer, chunk[:n]...)
+			bytesRead += n
+			if n < cap(chunk) {
+				break
+			}
 		}
-		client := conn.RemoteAddr().String()
-		server.connections[client] += 1
+
+		if nextInput {
+			continue
+		}
+		server.connections[clientAddress] += 1
 		// DEBT n-1 because newline is appended when message is sent from netcat on enter.
-		msg := string(buffer[:n-1])
-		args := strings.Fields(msg)
+		input := string(buffer[:bytesRead-1])
+		args := strings.Fields(input)
 		cmd := strings.ToLower(args[0])
+
 		switch cmd {
 		case "set":
 			key := args[1]
@@ -47,7 +67,7 @@ func Engine(conn net.Conn, server *server) error {
 			}
 			conn.Write([]byte(response + "\n"))
 		default:
-			conn.Write([]byte("Incorrect command\n"))
+			conn.Write([]byte("Incorrect command. Use set or get only!\n"))
 		}
 	}
 }
