@@ -1,3 +1,3 @@
-### LFS
+## LFS - High performance Key Value Storage Engine
 
-A simple TCP based, write-optimised, key-value storage engine. Records are written to an append-only file in a CSV format separated by a new line. In-memory hash-tables are used for indexing.
+### Records are written to an append-only binary file (AOF) and in-memory hash-tables are used for indexing records. Records are stored in this format: `<keyLength>key<valueLength>value` where the key length and value length are fixed uint16 bit integers. Hash maps are used to store the offset of a given key for efficient reading.
