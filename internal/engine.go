@@ -17,58 +17,64 @@ func Engine(conn net.Conn, server *server) error {
 		clientAddress := conn.RemoteAddr().String()
 		buffer := make([]byte, 0, 4096)
 		bytesRead := 0
-		nextInput := false
-
-		for {
-			chunk := make([]byte, 128)
-			n, err := conn.Read(chunk)
-			if err != nil {
-				if err == io.EOF {
-					conn.Close()
-					return nil
-				}
-				fmt.Printf("Could not read from connection %s : %s \n", clientAddress, err)
-				conn.Write([]byte("Parse Error!\n"))
-				nextInput = true
-				break
+		err := read(&buffer, &bytesRead, conn)
+		if err != nil {
+			if err == io.EOF {
+				conn.Close()
+				return nil
 			}
-			buffer = append(buffer, chunk[:n]...)
-			bytesRead += n
-			if n < cap(chunk) {
-				break
-			}
-		}
-
-		if nextInput {
+			fmt.Printf("Could not read from connection %s : %s \n", clientAddress, err)
+			conn.Write([]byte("Something went wrong!"))
 			continue
 		}
+
 		server.connections[clientAddress] += 1
-		// DEBT n-1 because newline is appended when message is sent from netcat on enter.
 		input := string(buffer[:bytesRead-1])
 		args := strings.Fields(input)
-		cmd := strings.ToLower(args[0])
-
-		switch cmd {
-		case "set":
-			key := args[1]
-			val := args[2]
-			response, err := handleSet(key, val)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			conn.Write([]byte(response + "\n"))
-		case "get":
-			key := args[1]
-			response, err := handleGet(key)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			conn.Write([]byte(response + "\n"))
-		default:
-			conn.Write([]byte("Incorrect command. Use set or get only!\n"))
+		response, err := router(args)
+		if err != nil {
+			fmt.Printf("Could not handle args %s : %s \n", clientAddress, err)
+			continue
 		}
+		conn.Write(response)
+	}
+}
+
+func read(buffer *[]byte, bytesRead *int, conn net.Conn) error {
+	for {
+		chunk := make([]byte, 128)
+		n, err := conn.Read(chunk)
+		if err != nil {
+			return err
+		}
+		*buffer = append(*buffer, chunk[:n]...)
+		*bytesRead += n
+		if n < cap(chunk) {
+			return nil
+		}
+	}
+}
+
+func router(args []string) ([]byte, error) {
+	cmd := strings.ToLower(args[0])
+	switch cmd {
+	case "set":
+		key := args[1]
+		val := args[2]
+		response, err := handleSet(key, val)
+		if err != nil {
+			return nil, err
+		}
+		return []byte(response + "\n"), nil
+	case "get":
+		key := args[1]
+		response, err := handleGet(key)
+		if err != nil {
+			return nil, err
+		}
+		return []byte(response + "\n"), nil
+	default:
+		return []byte("Incorrect command. Use set or get only!\n"), nil
 	}
 }
 
