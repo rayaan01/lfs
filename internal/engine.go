@@ -33,6 +33,10 @@ func Engine(conn net.Conn, server *server) error {
 		args := strings.Fields(input)
 		response, err := router(args)
 		if err != nil {
+			if err == io.EOF {
+				conn.Close()
+				return nil
+			}
 			fmt.Printf("Could not handle args %s : %s \n", clientAddress, err)
 			continue
 		}
@@ -73,8 +77,10 @@ func router(args []string) ([]byte, error) {
 			return nil, err
 		}
 		return []byte(response + "\n"), nil
+	case "exit":
+		return nil, io.EOF
 	default:
-		return []byte("Incorrect command. Use set or get only!\n"), nil
+		return []byte("Available commands: set [key] [value], get [key], exit \n"), nil
 	}
 }
 
