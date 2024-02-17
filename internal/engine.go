@@ -81,7 +81,7 @@ func router(args []string) ([]byte, error) {
 	case "exit":
 		return nil, io.EOF
 	default:
-		return []byte("Available commands: set [key] [value], get [key], exit \n"), nil
+		return []byte("Available commands:\n 1. set [key] [value]\n 2. get [key]\n 3. exit \n"), nil
 	}
 }
 

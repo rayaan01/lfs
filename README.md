@@ -1,8 +1,8 @@
 ## LFS - High Performance Key Value Storage Engine
 
-#### Storage
+### Storage
 
-Records are written to an append-only binary file (AOF) and in-memory hash-tables are used for indexing records.
+Records are written to an append-only binary file (AOF) and in-memory hash-tables are used for indexing records. Hash tables keep track of the offset of a record for a given key allowing for fast access.
 
 Data is stored in the following format: 
 
@@ -10,9 +10,9 @@ Data is stored in the following format:
 
 The `keyLength` and `valueLength` are binary encoded `uint16` integers.
 
-Both `key` and `value` should be of type `string`.
+Both `key` and `value` are of type `string`.
 
-#### Usage
+### Usage
 
 Connect to the server using any TCP client such as netcat (nc)
 
