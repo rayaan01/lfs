@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bufio"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -105,19 +106,39 @@ func handleGet(key string) ([]byte, error) {
 func handleSet(key string, val string) ([]byte, error) {
 	file, err := os.OpenFile(".db", os.O_WRONLY, 0644)
 	if err != nil {
-		return nil, errors.New("could not open file for writing\n" + err.Error())
+		return nil, errors.New("Could not open file for writing\n" + err.Error())
 	}
 	defer file.Close()
-	record := fmt.Sprintf("%s,%s\n", key, val)
-	serializedRecord := []byte(record)
+	writer := bufio.NewWriter(file)
+
+	keyLength := uint16(len(key))
+	err = binary.Write(writer, binary.LittleEndian, keyLength)
+	if err != nil {
+		return nil, errors.New("Could not write key length\n" + err.Error())
+	}
+	_, err = writer.Write([]byte(key))
+	if err != nil {
+		return nil, errors.New("Could not write key\n" + err.Error())
+	}
+
+	valueLength := uint16(len(val))
+	err = binary.Write(writer, binary.LittleEndian, valueLength)
+	if err != nil {
+		return nil, errors.New("Could not write value length\n" + err.Error())
+	}
+	_, err = writer.Write([]byte(val))
+	if err != nil {
+		return nil, errors.New("Could not write value\n" + err.Error())
+	}
+
 	offset, err := file.Seek(0, 2)
 	if err != nil {
 		return nil, errors.New("Could not seek to file\n" + err.Error())
 	}
-	_, err = file.Write(serializedRecord)
-	index[key] = offset
+	err = writer.Flush()
 	if err != nil {
 		return nil, errors.New("Could not write to DB\n" + err.Error())
 	}
+	index[key] = offset
 	return []byte("OK"), nil
 }
