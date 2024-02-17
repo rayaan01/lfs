@@ -38,7 +38,7 @@ func Engine(conn net.Conn, server *server) error {
 				conn.Close()
 				return nil
 			}
-			fmt.Printf("Could not handle args %s : %s \n", clientAddress, err)
+			fmt.Printf("Router error on %s : %s \n", clientAddress, err)
 			continue
 		}
 		conn.Write(response)
@@ -91,16 +91,42 @@ func handleGet(key string) ([]byte, error) {
 		return nil, errors.New("Could not open file for reading\n" + err.Error())
 	}
 	defer file.Close()
-	offset := index[key]
-	file.Seek(offset, 0)
-	reader := bufio.NewReader(file)
-	buffer, err := reader.ReadBytes('\n')
-	if err != nil {
-		return nil, errors.New("Could not read from DB\n" + err.Error())
+	offset, ok := index[key]
+	if !ok {
+		return []byte("(nil)"), nil
 	}
-	record := string(buffer[:len(buffer)-1])
-	pair := strings.Split(record, ",")
-	return []byte(pair[1]), nil
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return nil, errors.New("Could not seek to location in file\n" + err.Error())
+	}
+	reader := bufio.NewReader(file)
+
+	var keyLength uint16
+	err = binary.Read(reader, binary.LittleEndian, &keyLength)
+	if err != nil {
+		return nil, errors.New("Could not read key length\n" + err.Error())
+	}
+	k := make([]byte, keyLength)
+	_, err = reader.Read(k)
+	if err != nil {
+		return nil, errors.New("Could not read key\n" + err.Error())
+	}
+
+	if key != string(k) {
+		return []byte("(nil)"), nil
+	}
+
+	var valueLength uint16
+	err = binary.Read(reader, binary.LittleEndian, &valueLength)
+	if err != nil {
+		return nil, errors.New("Could not read value length\n" + err.Error())
+	}
+	value := make([]byte, valueLength)
+	_, err = reader.Read(value)
+	if err != nil {
+		return nil, errors.New("Could not read value\n" + err.Error())
+	}
+	return value, nil
 }
 
 func handleSet(key string, val string) ([]byte, error) {
@@ -137,7 +163,7 @@ func handleSet(key string, val string) ([]byte, error) {
 	}
 	err = writer.Flush()
 	if err != nil {
-		return nil, errors.New("Could not write to DB\n" + err.Error())
+		return nil, errors.New("Could not write to file\n" + err.Error())
 	}
 	index[key] = offset
 	return []byte("OK"), nil
