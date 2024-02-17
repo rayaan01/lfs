@@ -11,18 +11,18 @@ import (
 
 var index = map[string]int64{}
 
-func Engine(conn *net.Conn, server *server) error {
+func Engine(conn net.Conn, server *server) error {
 	for {
 		buffer := make([]byte, 128)
-		n, err := (*conn).Read(buffer)
+		n, err := conn.Read(buffer)
 		if err != nil {
-			(*conn).Close()
+			conn.Close()
 			if err.Error() != "EOF" {
 				fmt.Println("Could not read from connection\n", err)
 			}
 			return nil
 		}
-		client := (*conn).RemoteAddr().String()
+		client := conn.RemoteAddr().String()
 		server.connections[client] += 1
 		// DEBT n-1 because newline is appended when message is sent from netcat on enter.
 		msg := string(buffer[:n-1])
@@ -37,7 +37,7 @@ func Engine(conn *net.Conn, server *server) error {
 				fmt.Println(err)
 				continue
 			}
-			(*conn).Write([]byte(response + "\n"))
+			conn.Write([]byte(response + "\n"))
 		case "get":
 			key := args[1]
 			response, err := handleGet(key)
@@ -45,9 +45,9 @@ func Engine(conn *net.Conn, server *server) error {
 				fmt.Println(err)
 				continue
 			}
-			(*conn).Write([]byte(response + "\n"))
+			conn.Write([]byte(response + "\n"))
 		default:
-			(*conn).Write([]byte("Incorrect command\n"))
+			conn.Write([]byte("Incorrect command\n"))
 		}
 	}
 }

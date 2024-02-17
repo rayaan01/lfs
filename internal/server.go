@@ -23,7 +23,7 @@ func CreateServer(host string, port uint16, networkType string) (*server, error)
 	return &serverInstance, nil
 }
 
-func (s *server) AcceptConnections(handler func(conn *net.Conn, server *server) error) {
+func (s *server) AcceptConnections(handler func(conn net.Conn, server *server) error) {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
@@ -32,6 +32,6 @@ func (s *server) AcceptConnections(handler func(conn *net.Conn, server *server) 
 			continue
 		}
 		s.connections[conn.RemoteAddr().String()] = 0
-		go handler(&conn, s)
+		go handler(conn, s)
 	}
 }
