@@ -69,14 +69,14 @@ func router(args []string) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []byte(response + "\n"), nil
+		return append(response, []byte("\n")...), nil
 	case "get":
 		key := args[1]
 		response, err := handleGet(key)
 		if err != nil {
 			return nil, err
 		}
-		return []byte(response + "\n"), nil
+		return append(response, []byte("\n")...), nil
 	case "exit":
 		return nil, io.EOF
 	default:
@@ -84,10 +84,10 @@ func router(args []string) ([]byte, error) {
 	}
 }
 
-func handleGet(key string) (string, error) {
-	file, err := os.OpenFile(".db", os.O_RDONLY, 0744)
+func handleGet(key string) ([]byte, error) {
+	file, err := os.OpenFile(".db", os.O_RDONLY, 0644)
 	if err != nil {
-		return "", errors.New("Could not open file for reading\n" + err.Error())
+		return nil, errors.New("Could not open file for reading\n" + err.Error())
 	}
 	defer file.Close()
 	offset := index[key]
@@ -95,29 +95,29 @@ func handleGet(key string) (string, error) {
 	reader := bufio.NewReader(file)
 	buffer, err := reader.ReadBytes('\n')
 	if err != nil {
-		return "", errors.New("Could not read from DB\n" + err.Error())
+		return nil, errors.New("Could not read from DB\n" + err.Error())
 	}
 	record := string(buffer[:len(buffer)-1])
 	pair := strings.Split(record, ",")
-	return pair[1], nil
+	return []byte(pair[1]), nil
 }
 
-func handleSet(key string, val string) (string, error) {
-	file, err := os.OpenFile(".db", os.O_WRONLY, 0744)
+func handleSet(key string, val string) ([]byte, error) {
+	file, err := os.OpenFile(".db", os.O_WRONLY, 0644)
 	if err != nil {
-		return "", errors.New("Could not open file for writing\n" + err.Error())
+		return nil, errors.New("could not open file for writing\n" + err.Error())
 	}
 	defer file.Close()
 	record := fmt.Sprintf("%s,%s\n", key, val)
 	serializedRecord := []byte(record)
 	offset, err := file.Seek(0, 2)
 	if err != nil {
-		return "", errors.New("Could not seek to file\n" + err.Error())
+		return nil, errors.New("Could not seek to file\n" + err.Error())
 	}
 	_, err = file.Write(serializedRecord)
 	index[key] = offset
 	if err != nil {
-		return "", errors.New("Could not write to DB\n" + err.Error())
+		return nil, errors.New("Could not write to DB\n" + err.Error())
 	}
-	return "OK", nil
+	return []byte("OK"), nil
 }
