@@ -81,7 +81,7 @@ func router(args []string) ([]byte, error) {
 	case "exit":
 		return nil, io.EOF
 	default:
-		return []byte("Available commands:\n 1. set [key] [value]\n 2. get [key]\n 3. exit \n"), nil
+		return []byte("Available commands:\n1. set [key] [value]\n2. get [key]\n3. exit \n"), nil
 	}
 }
 
@@ -165,6 +165,7 @@ func handleSet(key string, val string) ([]byte, error) {
 	if err != nil {
 		return nil, errors.New("Could not write to file\n" + err.Error())
 	}
+
 	index[key] = offset
 	return []byte("OK"), nil
 }
