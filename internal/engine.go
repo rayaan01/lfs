@@ -13,7 +13,7 @@ import (
 
 var index = map[string]int64{}
 
-func Engine(conn net.Conn, server *server) error {
+func Engine(conn net.Conn, server *server) {
 	for {
 		clientAddress := conn.RemoteAddr().String()
 		buffer := make([]byte, 0, 4096)
@@ -22,7 +22,7 @@ func Engine(conn net.Conn, server *server) error {
 		if err != nil {
 			if err == io.EOF {
 				conn.Close()
-				return nil
+				return
 			}
 			fmt.Printf("Could not read from connection %s : %s \n", clientAddress, err)
 			conn.Write([]byte("Something went wrong!"))
@@ -36,7 +36,7 @@ func Engine(conn net.Conn, server *server) error {
 		if err != nil {
 			if err == io.EOF {
 				conn.Close()
-				return nil
+				return
 			}
 			fmt.Printf("Router error on %s : %s \n", clientAddress, err)
 			continue

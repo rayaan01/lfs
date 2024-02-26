@@ -23,7 +23,7 @@ func CreateServer(host string, port uint16, networkType string) (*server, error)
 	return &serverInstance, nil
 }
 
-func (s *server) AcceptConnections(handler func(conn net.Conn, server *server) error) {
+func (s *server) AcceptConnections(handler func(conn net.Conn, server *server)) {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
